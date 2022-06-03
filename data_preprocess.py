@@ -116,13 +116,14 @@ class my_stream():
                     self.temppo[self.stream[i][3]][1]= self.last_T_index
 
     def get_tfpo(self,po):
-        for i in range(self.index-1,-1,-1):
-                    if po == self.stream[i][3] and self.stream[i][0]=='PO':
-                        if  self.stream[i][-1]=='T':
-                            return True
-                        else:
-                            return False
-        return False
+        return self.stream[self.temppo[po][0]][-1]=='T' 
+        # for i in range(self.index-1,-1,-1):
+        #             if po == self.stream[i][3] and self.stream[i][0]=='PO':
+        #                 if  self.stream[i][-1]=='T':
+        #                     return True
+        #                 else:
+        #                     return False
+        # return False
 
     def move_ao(self,ao,index):
         assert self.tempao[ao][0][0]<index
@@ -187,8 +188,6 @@ class my_stream():
 
     def insert_for_order(self,addline):
         #order处理
-        #对每个订单号记录上一个插入的T
-        # self.temppo[addline[2]]=self.last_T_index
         if addline[6]=='D':
             if addline[2]==10117929:
                 y=1
@@ -328,7 +327,6 @@ class my_stream():
                 #TODO新建AO插在两个po中间 根据NBBO原则
                 #保存 ao-T 对
                 self.tempao[addline[6]] = [[T_index,T_index+1]]
-                self.tempao['last_ao'] = addline[6]
                 self.stream.insert(T_index,['AO', addline[0], addline[1], addline[6], addline[2], addline[3], 'S'
                                        , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
                 self.stream.insert(T_index+1,['T', addline[0], 0, 0, 0, 0, 0, 0, 0, 0, 0, addline[1], addline[2], addline[3]
@@ -341,8 +339,6 @@ class my_stream():
             if act_match < 0 and pass_match < 0:
                 # 保存 ao-T 对
                 self.tempao[addline[6]]= [[self.index + 1,self.index + 2]]
-                self.tempao['last_ao'] = addline[6]
-
                 self.stream.append(['PO', addline[0], 0, addline[5], addline[2], addline[3], 'B'
                                        , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'F'])
                 self.stream.append(['AO', addline[0], addline[1], addline[6], addline[2], addline[3], 'S'
@@ -442,7 +438,6 @@ class my_stream():
             if act_match<0 and pass_match>=0:
                 #如果之前有多个 ao 订单 对应，调整
                 self.tempao[addline[5]] = [[T_index,T_index+1]]
-                self.tempao['last_ao'] = addline[5]
                 self.stream.insert(T_index,['AO',addline[0],addline[1],addline[5],addline[2],addline[3],'B'
                                                 ,0,0,0,0,0,0,0,0,0,0,0,0,0])
                 self.stream.insert(T_index+1,['T',addline[0],0,0,0,0,0,0,0,0,0,addline[1],addline[2],addline[3]
@@ -454,7 +449,6 @@ class my_stream():
 
             if act_match<0 and pass_match<0:
                 self.tempao[addline[5]] = [[self.index + 1,self.index+2]]
-                self.tempao['last_ao'] = addline[5]
                 self.stream.append(['PO', addline[0], 0, addline[6], addline[2], addline[3], 0
                                        , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'F'])
                 self.stream.append(['AO', addline[0], addline[1], addline[5], addline[2], addline[3], 'B'
@@ -466,7 +460,7 @@ class my_stream():
                 self.last_T_index = self.index + 2
                 self.index += 3
 
-with open('量化分析/o1.csv') as oder_file,open('量化分析/t1.csv') as trade_file:
+with open('o1.csv') as oder_file,open('t1.csv') as trade_file:
 # with open('o.csv') as oder_file, open('t.csv') as trade_file:
     oder_csv = pd.read_csv(oder_file)
     trade_csv=pd.read_csv(trade_file)
