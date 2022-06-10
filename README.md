@@ -1,6 +1,8 @@
 # Quantitative-analysis
 
-## data_preprocess.py
+## data_process 
+
+#### data_preprocess_SH.py
 
 *目的*: 将**上海**的tick交易单和po委托单打包成po->ao->t 的数据流，用作进一步的特征提取。  
 
@@ -20,3 +22,15 @@
     2. po在ao不在：说明是首单，记录数量即可  
     3. po不在，ao不在：po不在说明信息错乱，先补po，无所谓ao，po插入顺序，因为po会在order插入函数中进行更新  
     4. po不在，ao在：po同3，ao同2
+  >
+#### data_preprocess_SZ.py
+
+*目的*: 将**深圳**的tick交易单和po委托单打包成类似上海的数据流，用作进一步的特征提取。
+
+*难点*:
+>type，因为order表里有po也有ao。当OrdType=1的时候，肯定是AO；但是OrdType=2或者U的时候，有可能是AO也可能是PO。对于每一个order单，先检查是否有对应trade或者撤单，如果可以找到的话，那么很好判断是po 还是 ao（如果是撤单的话，肯定是po）；如果找不到的话，那么先统一认定是po。对于每一个trade或者撤单，需要再回去modify order的种类。
+
+*解决方案设定*:
+>
+>- 对于trade，先去match是否有对应的市价单。如果matched，TradeBSFlag(tick)的方向，由order表决定，不通过tick.BidApplSeqNum和 tick.OfferApplSeqNum大小决定。（所以市价单，最好存一个字典，记录下他们的ApplSeqNum和side(买或者卖)。没有用的市价单需要删除），之后插入的逻辑同上海。
+>- 对于order数据点，我们在流⾥中寻找是否有已有的order_id，会有以下N种情况。如果matched，首先把F 的order删掉然后看下stream是否有F 的order，如果没有的话，就append order（有可能会再append一个撤单，请见如果unmatched,证明po来晚了。那么可以建立个字典把这些撤单存下来，等到po来了，再在后面append一个撤掉的order）；如果有F的order，就插到最后一个True的order后面（有可能会再插一个撤单，请见如果unmatched,证明po来晚了。那么可以建立个字典把这些撤单存下来，等到po来了，再在后面append一个撤掉的order）。如果没有matched,看下stream是否有F的order，如果没有的话，就append order；如果有F的order，就插到最后一个True的order后面。
